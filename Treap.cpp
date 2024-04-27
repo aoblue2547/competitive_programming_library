@@ -1,8 +1,24 @@
 template<class S, S(*op)(S, S), S(*e)()>
-class Treap{
+class Treap {
+	class xorshift {
+		ull x;
+	public:
+		xorshift() {
+			mt19937 rnd(chrono::steady_clock::now().time_since_epoch().count());
+			x = rnd();
+			for (int i = 0; i < 100; i++) {
+				random();
+			}
+		}
+
+		ull random() {
+			x = x ^ (x << 7);
+			return x = x ^ (x >> 9);
+		}
+	} rnd;
 	struct Node {
 		S val;
-		unique_ptr<Node> lch, rch;
+		Node* lch, *rch;
 		int pri;
 		int siz;
 		S sum;
@@ -12,18 +28,18 @@ class Treap{
 			rch = nullptr;
 		}
 	};
-	unique_ptr<Node> root;
+	Node* root;
 
-	int size(unique_ptr<Node>& t) {
+	int size(Node* t) {
 		if (t == nullptr)return 0;
 		return t->siz;
 	}
-	S prod(unique_ptr<Node>& t) {
+	S prod(Node* t) {
 		if (t == nullptr)return e();
 		return t->sum;
 	}
 
-	void push(unique_ptr<Node>& t) {
+	void push(Node* t) {
 		if (t == nullptr)return;
 		if (t->rev) {
 			swap(t->lch, t->rch);
@@ -33,13 +49,13 @@ class Treap{
 		}
 	}
 
-	unique_ptr<Node> update(unique_ptr<Node> t) {
+	Node* update(Node* t) {
 		t->siz = size(t->lch) + size(t->rch) + 1;
 		t->sum = op(op(prod(t->lch), prod(t->rch)), t->val);
 		return t;
 	}
 
-	unique_ptr<Node> merge(unique_ptr<Node> l, unique_ptr<Node> r) {
+	Node* merge(Node* l, Node* r) {
 		push(l);
 		push(r);
 		if (l == nullptr)return r;
@@ -55,36 +71,37 @@ class Treap{
 		}
 	}
 
-	pair<unique_ptr<Node>, unique_ptr<Node>> split(unique_ptr<Node> t, int k) {
+	pair<Node*, Node*> split(Node* t, int k) {
 		if (t == nullptr)return { nullptr,nullptr };
 
 		push(t);
 		if (k <= size(t->lch)) {
-			pair<unique_ptr<Node>, unique_ptr<Node>> s = split(move(t->lch), k);
+			pair<Node*, Node*> s = split(move(t->lch), k);
 			t->lch = move(s.second);
 			return { move(s.first),update(move(t)) };
 		}
 		else {
-			pair<unique_ptr<Node>, unique_ptr<Node>> s = split(move(t->rch), k - size(t->lch) - 1);
+			pair<Node*, Node*> s = split(move(t->rch), k - size(t->lch) - 1);
 			t->rch = move(s.first);
 			return { update(move(t)),move(s.second) };
 		}
 	}
 
-	unique_ptr<Node> insert(unique_ptr<Node> t, int k, S v) {
+	Node* insert(Node* t, int k, S v) {
 		auto [l, r] = split(move(t), k);
-		unique_ptr<Node> ret = merge(move(l), make_unique<Node>(v, rand()));
+		Node* ret = merge(move(l), new Node(v, rnd.random()));
 		ret = merge(move(ret), move(r));
 		return ret;
 	}
 
-	unique_ptr<Node> erase(unique_ptr<Node> t, int k) {
+	Node* erase(Node* t, int k) {
 		auto [l, r_aux] = split(move(t), k);
 		auto [m, r] = split(move(r_aux), 1);
+		delete m;
 		return merge(move(l), move(r));
 	}
 
-	void reverse(unique_ptr<Node>& t, int l, int r) {
+	void reverse(Node* t, int l, int r) {
 		auto [b_aux, c] = split(move(t), r);
 		auto [a, b] = split(move(b_aux), l);
 		if (b != nullptr)b->rev ^= true;
@@ -92,7 +109,7 @@ class Treap{
 		t = merge(move(t_aux), move(c));
 	}
 
-	void rotate(unique_ptr<Node>& t, int l, int m, int r) {
+	void rotate(Node* t, int l, int m, int r) {
 		reverse(t, l, r);
 		reverse(t, l, l + r - m);
 		reverse(t, l + r - m, r);
@@ -114,12 +131,12 @@ public:
 		root = erase(move(root), k);
 	}
 
-	int prod(int l, int r) {
+	S prod(int l, int r) {
 		assert(0 <= l and l <= r and r <= size(root));
 		auto [a, b] = split(move(root), r);
 		auto [c, d] = split(move(a), l);
 
-		int ret = prod(d);
+		S ret = prod(d);
 
 		root = merge(merge(move(c), move(d)), move(b));
 
