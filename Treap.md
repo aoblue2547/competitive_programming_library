@@ -87,3 +87,6 @@ https://atcoder.jp/contests/abc350/submissions/52648986?lang=ja
 
 rotate
 https://judge.u-aizu.ac.jp/onlinejudge/review.jsp?rid=9122358#1
+
+上限が大きいときのセグ木
+https://atcoder.jp/contests/abc351/submissions/52891838
