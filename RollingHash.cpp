@@ -21,7 +21,7 @@ struct RollingHash {
 		return res;
 	}
 	ll merge(int l1, int r1, int l2, int r2) {
-		return get(l1, r1) * pow[r2 - l2] + get(l2, r2);
+		return ((get(l1, r1) * pow[r2 - l2]) % mod + get(l2, r2)) % mod;
 	}
 	int lcp(int i, int j) {
 		int ok = 0, ng = min(n - i, n - j) + 1;
