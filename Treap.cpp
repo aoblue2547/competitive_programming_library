@@ -17,6 +17,10 @@ class Treap {
 	};
 	Node* root = nullptr;
 
+	vector<byte> buffer;
+	pmr::monotonic_buffer_resource pool;
+	pmr::polymorphic_allocator<Node> alloc;
+
 	int size(Node* t) {
 		if (t == nullptr)return 0;
 		return t->siz;
@@ -76,38 +80,36 @@ class Treap {
 
 	Node* insert(Node* t, int k, S v) {
 		auto [l, r] = split(t, k);
-		Node* ret = merge(l, new Node(v, rnd(mt)));
-		ret = merge(ret, r);
+		Node* p = alloc.allocate(1);
+		alloc.construct(p, v, rnd(mt));
+		Node* ret = merge(merge(l, p), r);
 		return ret;
 	}
 
 	Node* erase(Node* t, int k) {
 		auto [l, r_aux] = split(t, k);
 		auto [m, r] = split(r_aux, 1);
-		delete m;
+		alloc.deallocate(m, 1);
 		return merge(l, r);
 	}
 
-	void reverse(Node* t, int l, int r) {
+	Node* reverse(Node* t, int l, int r) {
 		auto [b_aux, c] = split(t, r);
 		auto [a, b] = split(b_aux, l);
-		if (b != nullptr)b->rev ^= true;
-		auto t_aux = merge(a, b);
-		t = merge(t_aux, c);
+		if (b)b->rev ^= true;
+		return merge(merge(a, b), c);
 	}
 
-	void rotate(Node* t, int l, int m, int r) {
-		reverse(t, l, r);
-		reverse(t, l, l + r - m);
-		reverse(t, l + r - m, r);
+	Node* rotate(Node* t, int l, int m, int r) {
+		t = reverse(t, l, r);
+		t = reverse(t, l, l + r - m);
+		return reverse(t, l + r - m, r);
 	}
 
 public:
-	Treap() :mt(0), rnd(0) {}
+	Treap(int n) : mt(0), rnd(0), buffer(n * sizeof(Node)), pool(buffer.data(), buffer.size()), alloc(&pool){}
 
-	int size() {
-		return size(root);
-	}
+	int size() { return size(root); }
 
 	void insert(int k, S v) {
 		assert(0 <= k and k <= size(root));
@@ -117,6 +119,12 @@ public:
 	void erase(int k) {
 		assert(0 <= k and k < size(root));
 		root = erase(root, k);
+	}
+
+	void set(int k, S v) {
+		assert(0 <= k and k < size(root));
+		root = erase(root, k);
+		root = insert(root, k, v);
 	}
 
 	S prod(int l, int r) {
@@ -138,12 +146,12 @@ public:
 
 	void reverse(int l, int r) {
 		assert(0 <= l and l <= r and r <= size(root));
-		reverse(root, l, r);
+		root = reverse(root, l, r);
 	}
 
 	void rotate(int l, int m, int r) {
 		assert(0 <= l and l <= m and m <= r and r <= size(root));
-		rotate(root, l, m, r);
+		root = rotate(root, l, m, r);
 	}
 
 	void debug() {
