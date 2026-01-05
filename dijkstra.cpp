@@ -8,18 +8,18 @@ template<class T = ll> struct Edge {
 template<class T = ll>
 using Graph = vector<vector<T>>;
 // ここより上は共通
+using DistVertex = pair<ll, ll>;
+DistVertex get_next(ll v) { return { v, 1 }; }
+DistVertex get_next(Edge<ll> v) { return { v.to, v.weight }; }
 template<class T>
-concept CanGetDist = is_same_v<T, ll> or is_same_v<T, Edge<ll>>;
-pair<ll, ll> get_next(ll v) { return { v, 1 }; }
-pair<ll, ll> get_next(Edge<ll> v) { return { v.to, v.weight }; }
-template<CanGetDist T>
+concept CanGetDistVertex = requires (T x) { { get_next(x) } -> same_as<DistVertex>; };
+template<CanGetDistVertex T = ll>
 vector<ll> dijkstra(const Graph<T>& g, ll st) {
 	constexpr ll INF = 1e18;
 	const int n = g.size();
 	vector<ll> dist(n, INF);
 	dist[st] = 0;
-	using P = pair<ll, ll>;
-	priority_queue<P, vector<P>, greater<P>> que;
+	priority_queue<DistVertex, vector<DistVertex>, greater<DistVertex>> que;
 	que.push({ 0, st });
 
 	while (not que.empty()) {
