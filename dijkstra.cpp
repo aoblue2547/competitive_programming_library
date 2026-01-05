@@ -15,8 +15,8 @@ template<class T>
 concept CanGetDistVertex = requires (T x) { { get_next(x) } -> same_as<DistVertex>; };
 template<CanGetDistVertex T = ll>
 vector<ll> dijkstra(const Graph<T>& g, ll st) {
-	constexpr ll INF = 1e18;
-	const int n = g.size();
+	constexpr ll INF = 1ll << 60;
+	const ll n = g.size();
 	vector<ll> dist(n, INF);
 	dist[st] = 0;
 	priority_queue<DistVertex, vector<DistVertex>, greater<DistVertex>> que;
@@ -37,3 +37,4 @@ vector<ll> dijkstra(const Graph<T>& g, ll st) {
 
 	return dist;
 }
+
